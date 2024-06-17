@@ -1,0 +1,50 @@
+{
+    "job_id": "XNAS-20240617-ESHBR6RJYW",
+    "files": [
+        {
+            "filename": "condition.json",
+            "size": 191878,
+            "hash": "sha256:9a414d0093c7422ee3becd1abea2810c16adb927f54535a6e07b82e474bf93eb",
+            "urls": {
+                "https": "https://api.databento.com/v0/batch/download/SQE9HF74/XNAS-20240617-ESHBR6RJYW/condition.json",
+                "ftp": "ftp://ftp.databento.com/SQE9HF74/XNAS-20240617-ESHBR6RJYW/condition.json"
+            }
+        },
+        {
+            "filename": "metadata.json",
+            "size": 686,
+            "hash": "sha256:4f419ca3a737f3ca410218235b937782a58efd2a77ae033efc21beb750dd444c",
+            "urls": {
+                "https": "https://api.databento.com/v0/batch/download/SQE9HF74/XNAS-20240617-ESHBR6RJYW/metadata.json",
+                "ftp": "ftp://ftp.databento.com/SQE9HF74/XNAS-20240617-ESHBR6RJYW/metadata.json"
+            }
+        },
+        {
+            "filename": "symbology.json",
+            "size": 164982,
+            "hash": "sha256:61e670d71879636c7677f9ce5407c2403e38df01efd883b5e4b71cbf46f620ae",
+            "urls": {
+                "https": "https://api.databento.com/v0/batch/download/SQE9HF74/XNAS-20240617-ESHBR6RJYW/symbology.json",
+                "ftp": "ftp://ftp.databento.com/SQE9HF74/XNAS-20240617-ESHBR6RJYW/symbology.json"
+            }
+        },
+        {
+            "filename": "symbology.csv",
+            "size": 45311,
+            "hash": "sha256:fa5a64cdf3bf29105b7fdba3b36ba80c2b2b73168464270db4ef8f4801e838ec",
+            "urls": {
+                "https": "https://api.databento.com/v0/batch/download/SQE9HF74/XNAS-20240617-ESHBR6RJYW/symbology.csv",
+                "ftp": "ftp://ftp.databento.com/SQE9HF74/XNAS-20240617-ESHBR6RJYW/symbology.csv"
+            }
+        },
+        {
+            "filename": "xnas-itch-20180501-20240614.ohlcv-1d.csv",
+            "size": 163288,
+            "hash": "sha256:f3c66afec977bf0d512fa804b0a2c339d99622dcba9a9d9bf89dd4107ec7995d",
+            "urls": {
+                "https": "https://api.databento.com/v0/batch/download/SQE9HF74/XNAS-20240617-ESHBR6RJYW/xnas-itch-20180501-20240614.ohlcv-1d.csv",
+                "ftp": "ftp://ftp.databento.com/SQE9HF74/XNAS-20240617-ESHBR6RJYW/xnas-itch-20180501-20240614.ohlcv-1d.csv"
+            }
+        }
+    ]
+}
