@@ -1,0 +1,60 @@
+The test accuracy is 0.6052631735801697.
+
+TP is 23, TN is 0, FP is 15, FN is 0. Accuracy:0.6052631735801697, Precision:0.6052631735801697, Sensitivity:1.0, Specificity:0.0
+
+The test accuracy is 0.44736841320991516.
+
+TP is 3, TN is 14, FP is 1, FN is 20. Accuracy:0.44736841320991516, Precision:0.75, Sensitivity:0.1304347813129425, Specificity:0.9333333373069763
+
+The test accuracy is 0.5789473652839661.
+
+TP is 22, TN is 0, FP is 15, FN is 1. Accuracy:0.5789473652839661, Precision:0.5945945978164673, Sensitivity:0.95652174949646, Specificity:0.0
+
+The test accuracy is 0.6052631735801697.
+
+TP is 23, TN is 0, FP is 15, FN is 0. Accuracy:0.6052631735801697, Precision:0.6052631735801697, Sensitivity:1.0, Specificity:0.0
+
+The test accuracy is 0.6052631735801697.
+
+TP is 23, TN is 0, FP is 15, FN is 0. Accuracy:0.6052631735801697, Precision:0.6052631735801697, Sensitivity:1.0, Specificity:0.0
+
+The test accuracy is 0.6052631735801697.
+
+TP is 23, TN is 0, FP is 15, FN is 0. Accuracy:0.6052631735801697, Precision:0.6052631735801697, Sensitivity:1.0, Specificity:0.0
+
+The test accuracy is 0.3947368562221527.
+
+TP is 0, TN is 15, FP is 0, FN is 23. Accuracy:0.3947368562221527, Precision:nan, Sensitivity:0.0, Specificity:1.0
+
+The test accuracy is 0.6052631735801697.
+
+TP is 23, TN is 0, FP is 15, FN is 0. Accuracy:0.6052631735801697, Precision:0.6052631735801697, Sensitivity:1.0, Specificity:0.0
+
+The test accuracy is 0.6052631735801697.
+
+TP is 23, TN is 0, FP is 15, FN is 0. Accuracy:0.6052631735801697, Precision:0.6052631735801697, Sensitivity:1.0, Specificity:0.0
+
+The test accuracy is 0.6052631735801697.
+
+TP is 23, TN is 0, FP is 15, FN is 0. Accuracy:0.6052631735801697, Precision:0.6052631735801697, Sensitivity:1.0, Specificity:0.0
+
+The test accuracy is 0.6052631735801697.
+
+TP is 22, TN is 1, FP is 14, FN is 1. Accuracy:0.6052631735801697, Precision:0.6111111044883728, Sensitivity:0.95652174949646, Specificity:0.06666667014360428
+
+The test accuracy is 0.6315789222717285.
+
+TP is 23, TN is 1, FP is 14, FN is 0. Accuracy:0.6315789222717285, Precision:0.6216216087341309, Sensitivity:1.0, Specificity:0.06666667014360428
+
+The test accuracy is 0.3947368562221527.
+
+TP is 0, TN is 15, FP is 0, FN is 23. Accuracy:0.3947368562221527, Precision:nan, Sensitivity:0.0, Specificity:1.0
+
+The test accuracy is 0.6578947305679321.
+
+TP is 23, TN is 2, FP is 13, FN is 0. Accuracy:0.6578947305679321, Precision:0.6388888955116272, Sensitivity:1.0, Specificity:0.13333334028720856
+
+The test accuracy is 0.8914260864257812.
+
+TP is 1292, TN is 777, FP is 114, FN is 138. Accuracy:0.8914260864257812, Precision:0.9189189076423645, Sensitivity:0.903496503829956, Specificity:0.872053861618042
+
