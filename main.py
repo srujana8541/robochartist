@@ -72,6 +72,7 @@ def get_args_parser():
                         help='if infer mode or not default(0)')
     parser.add_argument('--small_set', type=int, default=0,
                         help='using the small dataset or not default(0)')
+    parser.add_argument('--label', type=int, default=5, help="target time stamp to predict")
     return parser
 
 
@@ -157,7 +158,7 @@ def main(args):
     train_set, val_set = train_test_split(dataset, test_size=0.001, random_state=42)
     # Define the data loader for training data
     train_loader = torch.utils.data.DataLoader(train_set, batch_size=args.batch_size, shuffle=True, num_workers=2)
-    val_loader = torch.utils.data.DataLoader(val_set, batch_size=args.batch_size, shuffle=False, num_workers=2)
+    val_loader = torch.utils.data.DataLoader(val_set, batch_size=args.batch_size, shuffle=False, num_workers=2) # why no shuffle?
     test_loader = torch.utils.data.DataLoader(test_ds, batch_size=args.batch_size, shuffle=True, num_workers=2)
 
     if args.infer == 1:
