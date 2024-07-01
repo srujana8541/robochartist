@@ -1,12 +1,13 @@
+from torchvision import transforms
+from torch.utils.data import Dataset
 import os
 import time
 import torch
-import torchvision
 from collections import Counter
 from torch.utils.data import DataLoader, Dataset
 import matplotlib.pyplot as plt
 
-from torchvision import transforms, datasets
+# from torchvision import transforms, datasets
 from PIL import Image
 
 import matplotlib.pyplot as plt
@@ -27,27 +28,40 @@ import warnings
 warnings.filterwarnings("ignore")
 
 
-class ImageFolderWithPaths(datasets.ImageFolder):
-    """Custom dataset that includes image file paths. Extends
-    torchvision.datasets.ImageFolder
-    """
+class CustomImageDataset(Dataset):
+    def __init__(self, root_dir, transform=None):
+        self.root_dir = root_dir
+        self.transform = transform
+        self.images = [f for f in os.listdir(root_dir) if f.endswith('.png')]
 
-    # override the __getitem__ method. this is the method that dataloader calls
-    def __getitem__(self, index):
-        # this is what ImageFolder normally returns
-        original_tuple = super(ImageFolderWithPaths, self).__getitem__(index)
-        # the image file path
-        path = self.imgs[index][0]
-        # make a new tuple that includes original and the path
-        tuple_with_path = (original_tuple + (path,))
-        return tuple_with_path
+    def __len__(self):
+        return len(self.images)
+
+    def __getitem__(self, idx):
+        img_name = self.images[idx]
+        img_path = os.path.join(self.root_dir, img_name)
+        image = Image.open(img_path).convert('RGB')
+
+        info = img_name.split('_')
+        win_size = int(info[1])
+        # stock movement in the next 5 days
+        # label 1 refers to up, 0 down
+        label5 = (int(info[3]) + 1) / 2
+        label10 = (int(info[4]) + 1) / 2
+        label15 = (int(info[5]) + 1) / 2
+        last_d = info[6]
+
+        if self.transform:
+            image = self.transform(image)
+
+        return image, int(label5), img_name
 
 
 def get_args_parser():
     parser = argparse.ArgumentParser('CNN Training', add_help=False)
     parser.add_argument('--dataset', default='Finance', type=str,
                         help='choose dataset (default: Finance)')
-    parser.add_argument('--batch_size', type=int, default=2,
+    parser.add_argument('--batch_size', type=int, default=128,
                         help='batch size of the dataset default(128)')
     parser.add_argument('--epoch', type=int, default=1,
                         help='epochs of training process default(10)')
@@ -62,7 +76,7 @@ def get_args_parser():
                         help='learning rate (default: 4e-3), with total batch size 4096')
     parser.add_argument('--loss', type=str, default='ce',
                         help='define loss function (default: CrossEntropy)')
-    parser.add_argument('--device', type=str, default='cuda',
+    parser.add_argument('--device', type=str, default='cpu',
                         help='choose running device (default: Cuda)')
     parser.add_argument('--exp', type=str, default='debug',
                         help='choose using mode, (default: experiment mode)')
@@ -73,44 +87,28 @@ def get_args_parser():
     parser.add_argument('--small_set', type=int, default=0,
                         help='using the small dataset or not default(0)')
     parser.add_argument('--label', type=int, default=5, help="target time stamp to predict")
+    parser.add_argument('--train_dir', type=str, default='train', help="train directory")
+    parser.add_argument('--test_dir', type=str, default='test', help="test directory")
     return parser
 
 
 transform_train = transforms.Compose([
-    # Randomly crop the image to get an image with an area of ​​0.08 to 1 times the original image area 
-    # and a height-to-width ratio of 3/4 to 4/3, 
-    # and then scale it down to a new image with a height and width of 224 pixels.
     # transforms.RandomResizedCrop(224, scale=(0.08, 1.0),
     #                              ratio=(3.0/4.0, 4.0/3.0)),
-    
-    # Randomly flip horizontally with probability 0.5
     # transforms.RandomHorizontalFlip(),
-    
-    # Randomly change brightness, contrast, and saturation
     # transforms.ColorJitter(brightness=0.4, contrast=0.4, saturation=0.4),
     # transforms.Resize(img_resize),
-
-    # Crop out a square area with a height and width of 224 in the center of the image
     # transforms.CenterCrop(img_resize),
-
     transforms.ToTensor(),
-    
-    # Normalize each channel
-    # (0.485, 0.456, 0.406) and (0.229, 0.224, 0.225) are the mean and variance of each channel calculated on ImageNet.
-    # transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])  
+    # transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
 ])
 
 
-#Only perform deterministic operations on image augmentation on the test set
+# Only perform deterministic operations on image augmentation on the test set
 transform_test = transforms.Compose([
     # transforms.Resize(img_resize),
-
-    # Crop out a square area with a height and width of 224 in the center of the image
     # transforms.CenterCrop(img_resize),
-
     transforms.ToTensor(),
-
-     # Normalize each channel
     # transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
 ])
 
@@ -118,7 +116,7 @@ transform_test = transforms.Compose([
 def main(args):
     # Load the dataset
     # TODO: change the path to new folder
-    new_data_dir = "/home/wenh/ecometrics/data_MA"
+    current_dir = os.path.dirname(os.path.abspath(__file__))
     # Set up the training device
     device = torch.device(args.device)
     # in_chans = 3
@@ -133,13 +131,6 @@ def main(args):
     elif args.model == 'cnn5':
         model = CNN5()
 
-    '''
-    elif args.model == 'resnet':
-        model = ResNet(in_chans=in_chans, img_H=32, img_W=32)
-    elif args.vit == 'vit':
-        model = VisionTransformer(img_size=32, patch_size=2, num_classes=10, num_heads=1, depth=1, embed_dim=32)   
-    '''
-
     model = model.to(device)
     # Print out model information
     fp = open('output.log', 'a+')
@@ -151,14 +142,12 @@ def main(args):
     print(f"model:{args.model}")
     fp.close()
 
-    dataset = datasets.ImageFolder(root=os.path.join(new_data_dir, 'train'), transform=transform_train)
-
-    # test_ds = datasets.ImageFolder(root=os.path.join(new_data_dir, 'test'), transform=transform_train)
-    test_ds = ImageFolderWithPaths(os.path.join(new_data_dir, 'test'), transform=transform_train)
-    train_set, val_set = train_test_split(dataset, test_size=0.001, random_state=42)
+    dataset = CustomImageDataset(root_dir=os.path.join(current_dir, args.train_dir), transform=transform_train)
+    test_ds = CustomImageDataset(root_dir=os.path.join(current_dir, args.test_dir), transform=transform_test)
+    train_set, val_set = train_test_split(dataset, test_size=0.1, random_state=42)
     # Define the data loader for training data
     train_loader = torch.utils.data.DataLoader(train_set, batch_size=args.batch_size, shuffle=True, num_workers=2)
-    val_loader = torch.utils.data.DataLoader(val_set, batch_size=args.batch_size, shuffle=False, num_workers=2) # why no shuffle?
+    val_loader = torch.utils.data.DataLoader(val_set, batch_size=args.batch_size, shuffle=False, num_workers=2)
     test_loader = torch.utils.data.DataLoader(test_ds, batch_size=args.batch_size, shuffle=True, num_workers=2)
 
     if args.infer == 1:
@@ -169,13 +158,6 @@ def main(args):
     # Define optimizer
     optimizer = create_optimizer(args, model)
 
-    # TODO: can be deleted?
-    # prob, path = test(model=model,
-    #                   criterion=criterion,
-    #                   test_loader=test_loader,
-    #                   device=device)
-
-    # train
     if not args.infer:
         model_trained, best_model, train_los, train_acc, val_los, val_acc = train(model=model,
                                                                                   criterion=criterion,
@@ -193,10 +175,10 @@ def main(args):
     prob = np.concatenate(prob, axis=0)
     print(prob.shape)
     print(path[0])
-    path = [p.split('/')[-1][:-len('.png')].split('-') for p in path]
-    df = pd.DataFrame(path, columns=['SecuCode', 'Tradingday'])
+    date = [p.split('_')[6][:len('xxxx-xx-xx')] for p in path]
+    df = pd.DataFrame(date, columns=['Date'])
     df['Prob'] = prob
-    df.to_csv('./prob_output.csv')
+    df.to_csv(os.path.join(current_dir, 'prob_output.csv'))
     # Plotting loss and accuracy
     fp = open('output.log', 'a+')
     print(f'Drawing...', file=fp)

@@ -43,11 +43,6 @@ def train(model: torch.nn.Module, criterion,
         final_epoch = 0
         running_loss = avg_val_loss[-1]
 
-        # if avg_val_acc[-1] > best_val_acc:
-        #     best_val_acc = avg_val_acc[-1]
-        #     best_model = copy.deepcopy(model)
-        #     print("Best ckpt", best_val_acc)
-
         if avg_val_loss[-1] < best_val_loss:
             best_val_loss = avg_val_loss[-1]
             best_model = copy.deepcopy(model)
@@ -71,27 +66,20 @@ def train_one_epoch(model: torch.nn.Module, criterion,
     batch_train_loss, batch_train_acc = [], []
     max_train_iteration = len(train_loader)
 
-    for iteration, (inputs, labels) in enumerate(train_loader):
+    for iteration, (inputs, labels, _) in enumerate(train_loader):
         start_time = time.time()
-    # Get data and corresponding labels
         inputs = inputs.to(device)
         inputs[inputs > 0.1] = 1
         labels = labels.to(device)
-        # Get the model prediction results, (64, 10)
         output = model(inputs)
-    # Cross entropy cost function, out(batch,C), labels(batch)
+
         loss = criterion(output, labels)
-    # Gradient reset to 0
+
         optimizer.zero_grad()
-    # Computing Gradients
         loss.backward()
-    # Update weights
         optimizer.step()
-        # Recording Loss and Precision
         batch_train_loss.append(loss.item())
-    # Get the maximum value and its location
         _, predicted = torch.max(output, 1)
-    # Calculate the number of correct predictions
         batch_train_acc.append(((predicted == labels).sum() / len(predicted)).item())
         end_time = time.time()
         t = -start_time + end_time

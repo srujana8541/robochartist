@@ -13,10 +13,6 @@ import torch.optim as optim
 from torchvision import transforms, datasets
 from torch.utils.data import DataLoader, Dataset
 from PIL import Image
-'''
-from timm.data import IMAGENET_DEFAULT_MEAN, IMAGENET_DEFAULT_STD
-from timm.models.layers import DropPath, to_2tuple, trunc_normal_
-'''
 
 
 # Define Net Structure
@@ -35,6 +31,7 @@ class MLP1(nn.Module):
         x = self.fc2(x)
         x = self.softmax(x)
         return x
+
 
 class CNN(nn.Module):
     def __init__(self, img_H=96, img_W=180, in_chans=1):
@@ -147,69 +144,6 @@ class CNN2(nn.Module):  # 3 channels, even for black-and-white pictures
 
         return x
 
-# TODO: can be deleted?
-# class CNN2(nn.Module):  # 3 channels, even for black-and-white pictures
-#     def __init__(self):
-#         super(CNN2, self).__init__()
-
-#         self.layer1 = nn.Sequential(
-#             nn.Conv2d(3, 64, kernel_size=(5, 3), stride=(3, 1), padding=(8, 1)),
-#             nn.BatchNorm2d(64),
-#             nn.LeakyReLU(negative_slope=0.01, inplace=True), nn.MaxPool2d((2, 1), stride=(2, )),
-#         )
-#         self.layer2 = nn.Sequential(
-#             nn.Conv2d(64, 128, kernel_size=(5, 3), stride=(3, 1), padding=(8, 1)),
-#             nn.BatchNorm2d(128),
-#             nn.LeakyReLU(negative_slope=0.01, inplace=True), nn.MaxPool2d((2, 1), stride=(2, 1)),
-#         )
-#         self.layer3 = nn.Sequential(
-#             nn.Conv2d(128, 256, kernel_size=(5, 3), stride=(3, 1), padding=(8, 1)),
-#             nn.BatchNorm2d(256),
-#             nn.LeakyReLU(negative_slope=0.01, inplace=True),
-#             nn.Conv2d(256, 128, kernel_size=(5, 3), stride=(3, 1), padding=(8, 1)),
-#             nn.BatchNorm2d(128),
-#             nn.LeakyReLU(negative_slope=0.01, inplace=True),
-#             nn.MaxPool2d((2, 2), stride=(2, 2)),
-#         )
-#         self.layer4 = nn.Sequential(
-#             nn.Conv2d(128, 128, kernel_size=(5, 3), stride=(3, 1), padding=(8, 1)),
-#             nn.BatchNorm2d(128),
-#             nn.LeakyReLU(negative_slope=0.01, inplace=True), nn.MaxPool2d((2, 1), stride=(2, 1)),
-#         )
-#         self.fc1 = nn.Sequential(
-#             nn.Dropout(p=0.5),
-#             nn.Linear(128*2*45, 16),
-#             nn.Linear(16, 2),
-#         )
-#         self.softmax = nn.Softmax(dim=1)
-#         self.weights_init_xavier()
-
-#     def weights_init_xavier(self):
-#         if isinstance(self, torch.nn.Linear) or isinstance(self, torch.nn.Conv2d):
-#             init.xavier_uniform_(self.weight)
-
-#     def forward(self, x):
-#         x = x.reshape(-1, 3, 96, 180)
-#         # Automatically match batch size, channels=3, height=96, and width=180
-#         x = self.layer1(x)
-#         # print(x.shape)
-#         # Formula:
-#         # For conv layer:
-#         # Output_height = ((Input_height + 2 * Padding_height - Dilation_height * (Kernel_height - 1) - 1) / Stride_height) + 1
-#         # Output_width = ((Input_width + 2 * Padding_width - Dilation_width * (Kernel_width - 1) - 1) / Stride_width) + 1
-#         # For maxpool layer:
-#         # Output_height = ((Input_height - Kernel_height) / Stride_height) + 1
-#         # Output_width = ((Input_width - Kernel_width) / Stride_width) + 1
-
-#         x = self.layer2(x)
-#         x = self.layer3(x)
-#         x = self.layer4(x)
-#         # print(x.shape)
-#         x = x.view(-1, 128*2*45)
-#         x = self.fc1(x)
-#         x = self.softmax(x)
-
-#         return x
 
 class CNN3(nn.Module):  # Use a larger convolution kernel: 30*3
     def __init__(self):
@@ -266,7 +200,8 @@ class CNN3(nn.Module):  # Use a larger convolution kernel: 30*3
 
         return x
 
-class CNN4(nn.Module):  # For images with higher definition 
+
+class CNN4(nn.Module):  # For images with higher definition
     def __init__(self):
         super(CNN4, self).__init__()
         #  288, 540
@@ -291,7 +226,7 @@ class CNN4(nn.Module):  # For images with higher definition
 
         self.fc1 = nn.Sequential(
             nn.Dropout(p=0.85),
-            nn.Linear(256*2*17, 2),  # 1320960
+            nn.Linear(256*2*16, 2),  # 1320960
         )
         self.softmax = nn.Softmax(dim=1)
         self.weights_init_xavier()
@@ -301,7 +236,7 @@ class CNN4(nn.Module):  # For images with higher definition
             init.xavier_uniform_(self.weight)
 
     def forward(self, x):
-        x = x.reshape(-1, 3, 288, 540)
+        x = x.reshape(-1, 3, 264, 496)
         # Automatically match batch size, channels=3, height=96, and width=180
         x = self.layer1(x)
         # print(x.shape)
@@ -315,11 +250,12 @@ class CNN4(nn.Module):  # For images with higher definition
         # print(x.shape)
         x = F.max_pool2d(x, (2, 1), stride=(2, 2))
         # print(x.shape)
-        x = x.view(-1, 256*2*17)
+        x = x.view(-1, 256*2*16)
         x = self.fc1(x)
         x = self.softmax(x)
 
         return x
+
 
 class CNN5(nn.Module):
     def __init__(self):
@@ -348,6 +284,7 @@ class CNN5(nn.Module):
         x = F.relu(x)
         x = self.fc2(x)
         return x
+
 
 class ResNet(nn.Module):
     def __init__(self, img_H=180, img_W=96, in_chans=3):
