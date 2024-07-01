@@ -29,10 +29,11 @@ warnings.filterwarnings("ignore")
 
 
 class CustomImageDataset(Dataset):
-    def __init__(self, root_dir, transform=None):
+    def __init__(self, root_dir, transform=None, label=5):
         self.root_dir = root_dir
         self.transform = transform
         self.images = [f for f in os.listdir(root_dir) if f.endswith('.png')]
+        self.label = label
 
     def __len__(self):
         return len(self.images)
@@ -46,15 +47,22 @@ class CustomImageDataset(Dataset):
         win_size = int(info[1])
         # stock movement in the next 5 days
         # label 1 refers to up, 0 down
-        label5 = (int(info[3]) + 1) / 2
+        
+        label5 = (int(info[3]) + 1) / 2 #TODO: add argument here
         label10 = (int(info[4]) + 1) / 2
         label15 = (int(info[5]) + 1) / 2
         last_d = info[6]
+        l = label5
+        if self.label==15:
+            l = label15
+        elif self.label==10:  
+            l = label10
+        
 
         if self.transform:
             image = self.transform(image)
 
-        return image, int(label5), img_name
+        return image, int(l), img_name
 
 
 def get_args_parser():
@@ -86,6 +94,7 @@ def get_args_parser():
                         help='if infer mode or not default(0)')
     parser.add_argument('--small_set', type=int, default=0,
                         help='using the small dataset or not default(0)')
+    parser.add_argument('--label', type=int, default=5, help="target time stamp to predict")
     return parser
 
 
@@ -138,12 +147,12 @@ def main(args):
     print(f"model:{args.model}")
     fp.close()
 
-    dataset = CustomImageDataset(root_dir=os.path.join(current_dir, 'train'), transform=transform_train)
+    dataset = CustomImageDataset(root_dir=os.path.join(current_dir, 'train'), transform=transform_train, label=args.label)
     test_ds = CustomImageDataset(root_dir=os.path.join(current_dir, 'test'), transform=transform_test)
     train_set, val_set = train_test_split(dataset, test_size=0.1, random_state=42)
     # Define the data loader for training data
     train_loader = torch.utils.data.DataLoader(train_set, batch_size=args.batch_size, shuffle=True, num_workers=2)
-    val_loader = torch.utils.data.DataLoader(val_set, batch_size=args.batch_size, shuffle=False, num_workers=2)
+    val_loader = torch.utils.data.DataLoader(val_set, batch_size=args.batch_size, shuffle=False, num_workers=2) # why no shuffle?
     test_loader = torch.utils.data.DataLoader(test_ds, batch_size=args.batch_size, shuffle=True, num_workers=2)
 
     if args.infer == 1:
