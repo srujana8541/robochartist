@@ -4,7 +4,7 @@ import os
 import time
 import torch
 from collections import Counter
-from torch.utils.data import DataLoader, Dataset
+from torch.utils.data import DataLoader, Dataset, random_split
 import matplotlib.pyplot as plt
 
 # from torchvision import transforms, datasets
@@ -33,14 +33,19 @@ class CustomImageDataset(Dataset):
         self.root_dir = root_dir
         self.transform = transform
         self.images = [f for f in os.listdir(root_dir) if f.endswith('.png')]
+        self.cached_images = {}
 
     def __len__(self):
         return len(self.images)
 
     def __getitem__(self, idx):
         img_name = self.images[idx]
-        img_path = os.path.join(self.root_dir, img_name)
-        image = Image.open(img_path).convert('RGB')
+        if img_name in self.cached_images:
+            image = self.cached_images[img_name]
+        else:
+            img_path = os.path.join(self.root_dir, img_name)
+            image = Image.open(img_path).convert('RGB')
+            self.cached_images[img_name] = image
 
         info = img_name.split('_')
         win_size = int(info[1])
@@ -55,16 +60,20 @@ class CustomImageDataset(Dataset):
             image = self.transform(image)
 
         return image, int(label5), img_name
-
+    
 
 def get_args_parser():
     parser = argparse.ArgumentParser('CNN Training', add_help=False)
-    parser.add_argument('--dataset', default='Finance', type=str,
-                        help='choose dataset (default: Finance)')
+    parser.add_argument('--trainset', default='train', type=str,
+                        help='chootrse dataset (default: train)')
+    parser.add_argument('--testset', default='test', type=str,
+                        help='choose dataset (default: test)')
     parser.add_argument('--batch_size', type=int, default=128,
                         help='batch size of the dataset default(128)')
     parser.add_argument('--epoch', type=int, default=1,
                         help='epochs of training process default(10)')
+    parser.add_argument('--benchmark', type=int, default=1,
+                        help='0 for using benchmark dataset')
     # Optimization parameters
     parser.add_argument('--opt', default='adam', type=str, metavar='OPTIMIZER',
                         help='Optimizer (default: "adam"')
@@ -90,23 +99,12 @@ def get_args_parser():
 
 
 transform_train = transforms.Compose([
-    # transforms.RandomResizedCrop(224, scale=(0.08, 1.0),
-    #                              ratio=(3.0/4.0, 4.0/3.0)),
-    # transforms.RandomHorizontalFlip(),
-    # transforms.ColorJitter(brightness=0.4, contrast=0.4, saturation=0.4),
-    # transforms.Resize(img_resize),
-    # transforms.CenterCrop(img_resize),
     transforms.ToTensor(),
-    # transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
 ])
 
 
-# Only perform deterministic operations on image augmentation on the test set
 transform_test = transforms.Compose([
-    # transforms.Resize(img_resize),
-    # transforms.CenterCrop(img_resize),
     transforms.ToTensor(),
-    # transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
 ])
 
 
@@ -129,18 +127,24 @@ def main(args):
 
     model = model.to(device)
     # Print out model information
+    print(f"trainset:{args.trainset}")
+    print(f"testset:{args.testset}")
     fp = open('output.log', 'a+')
     print(f"using {device} device", file=fp)
-    print(f"dataset:{args.dataset}", file=fp)
+    print(f"trainset:{args.trainset}", file=fp)
+    print(f"testset:{args.testset}", file=fp)
     print(f"model:{args.model}", file=fp)
     print(f"using {device} device")
-    print(f"dataset:{args.dataset}")
-    print(f"model:{args.model}")
     fp.close()
 
-    dataset = CustomImageDataset(root_dir=os.path.join(current_dir, 'train'), transform=transform_train)
-    test_ds = CustomImageDataset(root_dir=os.path.join(current_dir, 'test'), transform=transform_test)
-    train_set, val_set = train_test_split(dataset, test_size=0.1, random_state=42)
+    dataset = CustomImageDataset(root_dir=os.path.join(current_dir, args.trainset), transform=transform_train)
+    test_ds = CustomImageDataset(root_dir=os.path.join(current_dir, args.testset), transform=transform_test)
+    
+    train_size = int(0.9 * len(dataset))
+    val_size = len(dataset) - train_size
+    # train_set, val_set = train_test_split(dataset, test_size=0.1, random_state=42)
+    train_set, val_set = random_split(dataset, [train_size, val_size])
+
     # Define the data loader for training data
     train_loader = torch.utils.data.DataLoader(train_set, batch_size=args.batch_size, shuffle=True, num_workers=2)
     val_loader = torch.utils.data.DataLoader(val_set, batch_size=args.batch_size, shuffle=False, num_workers=2)
@@ -155,14 +159,17 @@ def main(args):
     optimizer = create_optimizer(args, model)
 
     if not args.infer:
-        model_trained, best_model, train_los, train_acc, val_los, val_acc = train(model=model,
-                                                                                  criterion=criterion,
-                                                                                  train_loader=train_loader,
-                                                                                  val_loader=test_loader,
-                                                                                  optimizer=optimizer,
-                                                                                  device=device,
-                                                                                  max_epoch=args.epoch,
-                                                                                  disp_freq=100)
+        model_trained, best_model, train_los, train_acc, val_los, val_acc = train(
+            model=model,
+            criterion=criterion,
+            train_loader=train_loader,
+            val_loader=val_loader,
+            test_loader=test_loader,
+            optimizer=optimizer,
+            device=device,
+            max_epoch=args.epoch,
+            disp_freq=100)
+
     # test
     prob, path = test(model=best_model,
                       criterion=criterion,
@@ -172,8 +179,10 @@ def main(args):
     print(prob.shape)
     print(path[0])
     date = [p.split('_')[6][:len('xxxx-xx-xx')] for p in path]
+    label = [p.split('_')[3] for p in path]
     df = pd.DataFrame(date, columns=['Date'])
     df['Prob'] = prob
+    df['Label'] = label
     df.to_csv(os.path.join(current_dir, 'prob_output.csv'))
     # Plotting loss and accuracy
     fp = open('output.log', 'a+')
@@ -181,22 +190,18 @@ def main(args):
     print(f'Drawing...')
 
     # Plotting loss and accuracy
-    suffix1 = args.dataset + '_' + args.model + '_lr' + str(args.lr) + '_' + str(
+    suffix1 = args.trainset + '_' + args.model + '_lr' + str(args.lr) + '_' + str(
         args.opt) + '_wd' + str(args.weight_decay) + '_epoch' + str(args.epoch) + '.png'
     # path1 = ['train_loss_' + suffix1, 'train_acc_' + suffix1]
     path1 = ['loss_' + suffix1, 'acc_' + suffix1]
-    suffix2 = args.dataset + '_' + args.model + '_lr' + str(args.lr) + '_' + str(
+    suffix2 = args.trainset + '_' + args.model + '_lr' + str(args.lr) + '_' + str(
         args.opt) + '_wd' + str(args.weight_decay) + '_epoch' + str(args.epoch) + '.png'
     path2 = ['val_loss_' + suffix2, 'val_acc_' + suffix2]
-    prefix = args.dataset + '_' + args.model + '_lr' + str(args.lr) + '_' + str(
+    prefix = args.trainset + '_' + args.model + '_lr' + str(args.lr) + '_' + str(
         args.opt) + '_wd' + str(args.weight_decay) + '_epoch' + str(args.epoch)
     if not args.infer:
         # Save the model
         torch.save(best_model.state_dict(), prefix + '_model.pth')
-        '''
-        plot_loss_and_acc({'TRAIN': [train_los, train_acc]}, path1)
-        plot_loss_and_acc({'VAL': [val_los, val_acc]}, path2)
-        '''
         plot_loss_and_acc({'model_train': [train_los, train_acc]}, {'model_val':  [val_los, val_acc]}, path1)
         print("Draw Done", file=fp)
         print("Draw Done")
@@ -207,6 +212,6 @@ if __name__ == "__main__":
     """
     Main code
     """
-    parser = argparse.ArgumentParser('Prombelm solver', parents=[get_args_parser()])
+    parser = argparse.ArgumentParser('Problem solver', parents=[get_args_parser()])
     args = parser.parse_args()
     main(args)

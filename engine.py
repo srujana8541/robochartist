@@ -1,13 +1,15 @@
 """ Train and Test """
 
 import numpy as np
+import pandas as pd
 import torch
 import time
 import copy
+import os
 
 
 def train(model: torch.nn.Module, criterion,
-          train_loader, val_loader, optimizer: torch.optim.Optimizer,
+          train_loader, val_loader, test_loader, optimizer: torch.optim.Optimizer,
           device: torch.device, max_epoch: int, disp_freq):  # para: val_set
 
     avg_train_loss, avg_train_acc = [], []
@@ -55,6 +57,24 @@ def train(model: torch.nn.Module, criterion,
         elif epoch - last_min_ind >= early_stopping_epoch:
             final_epoch = epoch
             break
+
+        if (epoch + 1) % 5 == 0:
+            current_dir = os.path.dirname(os.path.abspath(__file__))
+            torch.save(model.state_dict(), f"model_trained_{epoch+1}.pth")
+            # test
+            prob, path = test(model=model,
+                              criterion=criterion,
+                              test_loader=test_loader,
+                              device=device)
+            prob = np.concatenate(prob, axis=0)
+            print(prob.shape)
+            print(path[0])
+            label = [p.split('_')[3] for p in path]
+            date = [p.split('_')[6][:len('xxxx-xx-xx')] for p in path]
+            df = pd.DataFrame(date, columns=['Date'])
+            df['Prob'] = prob
+            df['Label'] = label
+            df.to_csv(os.path.join(current_dir, f'prob_output_{epoch+1}.csv'))
 
     return model, best_model, avg_train_loss, avg_train_acc, avg_val_loss, avg_val_acc
 
